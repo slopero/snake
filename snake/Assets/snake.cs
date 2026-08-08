@@ -12,7 +12,13 @@ public class Snake : MonoBehaviour
     private List<Vector2Int> bodyPositions = new List<Vector2Int>();
     private List<Transform> bodySegments = new List<Transform>();
     private FoodSpawner foodSpawner; // ← добавили сюда
+    public int gridSize = 20; // размер сетки, чтобы не выйти за границы
+    private bool isGameOver = false; // флаг окончания игры
 
+    public bool IsOccupied(Vector2Int pos)
+    {
+        return bodyPositions.Contains(pos);
+    }
     void Start()
     {
         gridPosition = Vector2Int.zero;
@@ -22,6 +28,8 @@ public class Snake : MonoBehaviour
 
     void Update()
     {
+        if (isGameOver) return;
+
         HandleInput();
 
         moveTimer += Time.deltaTime;
@@ -78,12 +86,38 @@ public class Snake : MonoBehaviour
         }
     }
 
+    void CheckCollisions()
+    {
+        if (gridPosition.x < 0 || gridPosition.x >= gridSize ||
+            gridPosition.y < 0 || gridPosition.y >= gridSize)
+        {
+            GameOver();
+            return;
+        }
+
+        for (int i = 1; i < bodyPositions.Count; i++)
+        {
+            if (bodyPositions[i] == gridPosition)
+            {
+                GameOver();
+                return;
+            }
+        }
+    }
+
+    void GameOver()
+    {
+        isGameOver = true;
+        Debug.Log("Game Over!");
+    }
+
     public void Grow()
     {
         Vector2Int newSegmentPos = bodyPositions[bodyPositions.Count - 1];
         bodyPositions.Add(newSegmentPos);
 
         GameObject newSegment = Instantiate(segmentPrefab);
+        newSegment.transform.position = new Vector3(newSegmentPos.x, newSegmentPos.y, 0);
         bodySegments.Add(newSegment.transform);
     }
 }

@@ -10,7 +10,6 @@ GameObject:
   m_Component:
   - component: {fileID: 2846024781528412689}
   - component: {fileID: 5214401153844321010}
-  - component: {fileID: 3784201657570584288}
   m_Layer: 0
   m_Name: snakesegment
   m_TagString: Untagged
@@ -93,16 +92,3 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
   m_BlendShapeWeights: []
---- !u!114 &3784201657570584288
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6027222612891436077}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ef7e167bbe3f4324db982d0b5c40130e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Snake
-  moveInterval: 0.2
