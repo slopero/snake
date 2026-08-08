@@ -12,7 +12,7 @@ public class Snake : MonoBehaviour
     private List<Vector2Int> bodyPositions = new List<Vector2Int>();
     private List<Transform> bodySegments = new List<Transform>();
     private FoodSpawner foodSpawner; // ← добавили сюда
-    public int gridSize = 20; // размер сетки, чтобы не выйти за границы
+    public int gridSize = 11; // размер сетки, чтобы не выйти за границы
     private bool isGameOver = false; // флаг окончания игры
 
     public bool IsOccupied(Vector2Int pos)
@@ -21,7 +21,7 @@ public class Snake : MonoBehaviour
     }
     void Start()
     {
-        gridPosition = Vector2Int.zero;
+        gridPosition = new Vector2Int(gridSize / 2, gridSize / 2);
         bodyPositions.Add(gridPosition);
         foodSpawner = FindObjectOfType<FoodSpawner>(); // ← добавили сюда
     }
@@ -84,6 +84,8 @@ public class Snake : MonoBehaviour
             Grow();
             foodSpawner.SpawnFood();
         }
+
+        CheckCollisions();
     }
 
     void CheckCollisions()

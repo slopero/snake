@@ -3,7 +3,6 @@ using UnityEngine;
 public class FoodSpawner : MonoBehaviour
 {
     public GameObject foodPrefab;
-    public int gridSize = 20;
 
     private GameObject currentFood;
     public Vector2Int FoodPosition { get; private set; }
@@ -22,11 +21,11 @@ public class FoodSpawner : MonoBehaviour
 
         do
         {
-            int x = Random.Range(0, gridSize);
-            int y = Random.Range(0, gridSize);
+            int x = Random.Range(0, snake.gridSize);
+            int y = Random.Range(0, snake.gridSize);
             newPos = new Vector2Int(x, y);
         }
-        while (snake.IsOccupied(newPos)); // пока клетка занята телом — выбираем заново
+        while (snake.IsOccupied(newPos));
 
         FoodPosition = newPos;
 
