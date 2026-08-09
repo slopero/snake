@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine.UI;
 using TMPro;
+using UnityEngine.SceneManagement;
 
 public class Snake : MonoBehaviour
 {
@@ -23,13 +24,16 @@ public class Snake : MonoBehaviour
     public TextMeshProUGUI scoreText;
     public GameObject gameOverPanel;
     public TextMeshProUGUI finalScoreText;
-
-private int score = 0;
+    private Vector2 touchStartPos;
+    private bool touchActive = false;
+    public float swipeThreshold = 50f; // минимальное расстояние свайпа в пикселях, чтобы засчитать поворот
+    private int score = 0;
 
     public bool IsOccupied(Vector2Int pos)
     {
         return bodyPositions.Contains(pos);
     }
+
     void Start()
     {
         gridPosition = new Vector2Int(gridSize / 2, gridSize / 2);
@@ -43,6 +47,7 @@ private int score = 0;
     {
         Vector2Int? newDir = null;
 
+        // клавиатура
         if (Keyboard.current.upArrowKey.wasPressedThisFrame || Keyboard.current.wKey.wasPressedThisFrame)
             newDir = Vector2Int.up;
         else if (Keyboard.current.downArrowKey.wasPressedThisFrame || Keyboard.current.sKey.wasPressedThisFrame)
@@ -52,16 +57,60 @@ private int score = 0;
         else if (Keyboard.current.rightArrowKey.wasPressedThisFrame || Keyboard.current.dKey.wasPressedThisFrame)
             newDir = Vector2Int.right;
 
-        if (newDir.HasValue && inputQueue.Count < 2) // ограничиваем очередь двумя нажатиями
+        if (newDir.HasValue)
         {
-            bool isOpposite = newDir.Value == -lastQueuedDirection;
-            bool isSame = newDir.Value == lastQueuedDirection;
+            TryQueueDirection(newDir.Value);
+        }
 
-            if (!isOpposite && !isSame)
+        HandleTouchInput();
+    }
+
+    void HandleTouchInput()
+    {
+        if (Touchscreen.current == null) return; // на устройстве без тача просто выходим
+
+        var touch = Touchscreen.current.primaryTouch;
+
+        if (touch.press.wasPressedThisFrame)
+        {
+            touchStartPos = touch.position.ReadValue();
+            touchActive = true;
+        }
+
+        if (touch.press.wasReleasedThisFrame && touchActive)
+        {
+            touchActive = false;
+            Vector2 touchEndPos = touch.position.ReadValue();
+            Vector2 delta = touchEndPos - touchStartPos;
+
+            if (delta.magnitude < swipeThreshold) return; // слишком короткий свайп, игнорируем
+
+            Vector2Int swipeDir;
+
+            if (Mathf.Abs(delta.x) > Mathf.Abs(delta.y))
             {
-                inputQueue.Enqueue(newDir.Value);
-                lastQueuedDirection = newDir.Value;
+                swipeDir = delta.x > 0 ? Vector2Int.right : Vector2Int.left;
             }
+            else
+            {
+                swipeDir = delta.y > 0 ? Vector2Int.up : Vector2Int.down;
+            }
+
+            TryQueueDirection(swipeDir);
+        }
+    }
+
+    void TryQueueDirection(Vector2Int newDir)
+    {
+        if (inputQueue.Count >= 2) return;
+
+        bool isOpposite = newDir == -lastQueuedDirection;
+        bool isSame = newDir == lastQueuedDirection;
+
+        if (!isOpposite && !isSame)
+        {
+            inputQueue.Enqueue(newDir);
+            lastQueuedDirection = newDir;
         }
     }
 
@@ -161,4 +210,10 @@ private int score = 0;
         newSegment.transform.position = new Vector3(newSegmentPos.x, newSegmentPos.y, 0);
         bodySegments.Add(newSegment.transform);
     }
+
+    public void RestartGame()
+    {
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+    }
+
 }
