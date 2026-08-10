@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 using System.Collections.Generic;
+using System.Collections;
 using System.Linq;
 using UnityEngine.UI;
 using TMPro;
@@ -8,6 +9,8 @@ using UnityEngine.SceneManagement;
 
 public class Snake : MonoBehaviour
 {
+    public TextMeshProUGUI countdownText;
+    private bool countdownStarted = false;
     private Queue<Vector2Int> inputQueue = new Queue<Vector2Int>();
     private Vector2Int lastQueuedDirection;
     private Vector2Int direction = Vector2Int.right; // куда движется змейка сейчас
@@ -28,6 +31,14 @@ public class Snake : MonoBehaviour
     private bool touchActive = false;
     public float swipeThreshold = 50f; // минимальное расстояние свайпа в пикселях, чтобы засчитать поворот
     private int score = 0;
+    public bool useButtons = false;
+    public GameObject buttonPanel; // ссылка на панель кнопок из пункта 3
+
+
+    public void PressUp() => TryQueueDirection(Vector2Int.up);
+    public void PressDown() => TryQueueDirection(Vector2Int.down);
+    public void PressLeft() => TryQueueDirection(Vector2Int.left);
+    public void PressRight() => TryQueueDirection(Vector2Int.right);
 
     public bool IsOccupied(Vector2Int pos)
     {
@@ -47,7 +58,7 @@ public class Snake : MonoBehaviour
     {
         Vector2Int? newDir = null;
 
-        // клавиатура
+        // клавиатура — оставляем всегда, не мешает
         if (Keyboard.current.upArrowKey.wasPressedThisFrame || Keyboard.current.wKey.wasPressedThisFrame)
             newDir = Vector2Int.up;
         else if (Keyboard.current.downArrowKey.wasPressedThisFrame || Keyboard.current.sKey.wasPressedThisFrame)
@@ -62,9 +73,17 @@ public class Snake : MonoBehaviour
             TryQueueDirection(newDir.Value);
         }
 
-        HandleTouchInput();
+        if (!useButtons)
+        {
+            HandleTouchInput();
+        }
     }
 
+    public void SetControlMode(bool buttonsEnabled)
+    {
+        useButtons = buttonsEnabled;
+        buttonPanel.SetActive(buttonsEnabled);
+    }
     void HandleTouchInput()
     {
         if (Touchscreen.current == null) return; // на устройстве без тача просто выходим
@@ -120,11 +139,15 @@ public class Snake : MonoBehaviour
 
         if (!gameStarted)
         {
-            if (Keyboard.current.anyKey.wasPressedThisFrame)
+            bool keyPressed = Keyboard.current != null && Keyboard.current.anyKey.wasPressedThisFrame;
+            bool touchPressed = Touchscreen.current != null && Touchscreen.current.primaryTouch.press.wasPressedThisFrame;
+
+            if (keyPressed || touchPressed)
             {
                 gameStarted = true;
+                StartCoroutine(StartCountdown());
             }
-            return; // пока не началось — дальше код не выполняем
+            return;
         }
 
         HandleInput();
@@ -138,6 +161,23 @@ public class Snake : MonoBehaviour
         }
     }
 
+    IEnumerator StartCountdown()
+    {
+        countdownText.gameObject.SetActive(true);
+
+        countdownText.text = "3";
+        yield return new WaitForSeconds(1f);
+
+        countdownText.text = "2";
+        yield return new WaitForSeconds(1f);
+
+        countdownText.text = "1";
+        yield return new WaitForSeconds(1f);
+
+        countdownText.gameObject.SetActive(false);
+        gameStarted = true;
+    }
+
     void Move()
     {
         if (inputQueue.Count > 0)
@@ -145,10 +185,18 @@ public class Snake : MonoBehaviour
             direction = inputQueue.Dequeue();
         }
 
-        gridPosition += direction;
+        Vector2Int newHeadPos = gridPosition + direction;
+
+        if (IsCollision(newHeadPos))
+        {
+            GameOver();
+            return; // не двигаем голову и не рисуем — она останется на прежнем месте
+        }
+
+        gridPosition = newHeadPos;
 
         bodyPositions.Insert(0, gridPosition);
-        Vector2Int removedTail = bodyPositions[bodyPositions.Count - 1]; // запоминаем хвост ДО удаления
+        Vector2Int removedTail = bodyPositions[bodyPositions.Count - 1];
         bodyPositions.RemoveAt(bodyPositions.Count - 1);
 
         transform.position = new Vector3(gridPosition.x, gridPosition.y, 0);
@@ -161,13 +209,11 @@ public class Snake : MonoBehaviour
 
         if (gridPosition == foodSpawner.FoodPosition)
         {
-            Grow(removedTail); // передаём сохранённую позицию
+            Grow(removedTail);
             foodSpawner.SpawnFood();
-            score++;                // ← добавили
+            score++;
             UpdateScoreText();
         }
-
-        CheckCollisions();
     }
 
     void UpdateScoreText()
@@ -175,23 +221,19 @@ public class Snake : MonoBehaviour
         scoreText.text = "Score: " + score;
     }
 
-    void CheckCollisions()
+    bool IsCollision(Vector2Int pos)
     {
-        if (gridPosition.x < 0 || gridPosition.x >= gridSize ||
-            gridPosition.y < 0 || gridPosition.y >= gridSize)
+        if (pos.x < 0 || pos.x >= gridSize || pos.y < 0 || pos.y >= gridSize)
+            return true;
+
+        // проверяем тело, кроме последнего сегмента (хвоста) — он в любом случае освободит эту клетку в этот же ход
+        for (int i = 0; i < bodyPositions.Count - 1; i++)
         {
-            GameOver();
-            return;
+            if (bodyPositions[i] == pos)
+                return true;
         }
 
-        for (int i = 1; i < bodyPositions.Count; i++)
-        {
-            if (bodyPositions[i] == gridPosition)
-            {
-                GameOver();
-                return;
-            }
-        }
+        return false;
     }
 
     void GameOver()
