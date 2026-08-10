@@ -172,7 +172,7 @@ public class Snake : MonoBehaviour
 
     void UpdateScoreText()
     {
-        scoreText.text = "Счёт: " + score;
+        scoreText.text = "Score: " + score;
     }
 
     void CheckCollisions()
@@ -199,7 +199,7 @@ public class Snake : MonoBehaviour
         isGameOver = true;
         Debug.Log("Game Over!");
         gameOverPanel.SetActive(true);
-        finalScoreText.text = "Счёт: " + score;
+        finalScoreText.text = "Score: " + score;
     }
 
     public void Grow(Vector2Int newSegmentPos)
