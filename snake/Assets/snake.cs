@@ -139,13 +139,16 @@ public class Snake : MonoBehaviour
 
         if (!gameStarted)
         {
-            bool keyPressed = Keyboard.current != null && Keyboard.current.anyKey.wasPressedThisFrame;
-            bool touchPressed = Touchscreen.current != null && Touchscreen.current.primaryTouch.press.wasPressedThisFrame;
-
-            if (keyPressed || touchPressed)
+            if (!countdownStarted)
             {
-                gameStarted = true;
-                StartCoroutine(StartCountdown());
+                bool keyPressed = Keyboard.current != null && Keyboard.current.anyKey.wasPressedThisFrame;
+                bool touchPressed = Touchscreen.current != null && Touchscreen.current.primaryTouch.press.wasPressedThisFrame;
+
+                if (keyPressed || touchPressed)
+                {
+                    countdownStarted = true;
+                    StartCoroutine(StartCountdown());
+                }
             }
             return;
         }
